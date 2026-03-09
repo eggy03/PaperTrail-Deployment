@@ -1,0 +1,97 @@
+#file: noinspection SpellCheckingInspection
+services:
+
+  postgres:
+    container_name: papertrail-postgres
+    image: postgres:18.0-alpine
+    mem_limit: 512m
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: papertrail
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - papertrail_postgres_data:/var/lib/postgresql/data
+    networks:
+      - papertrail-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  redis:
+    container_name: papertrail-redis
+    image: redis:8.6-alpine
+    mem_limit: 512m
+    restart: unless-stopped
+    networks:
+      - papertrail-network
+    healthcheck:
+      test: [ "CMD", "redis-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  papertrail-api:
+    container_name: papertrail-api
+    image: ghcr.io/eggy03/papertrail-api:latest-native
+    mem_limit: 512m
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      DB_URL: jdbc:postgresql://postgres:5432/papertrail
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      REDIS_URL: redis://redis:6379
+    networks:
+      - papertrail-network
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:8080/q/health" ]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  papertrail-bot:
+    container_name: papertrail-bot
+    image: ghcr.io/eggy03/papertrail-bot:latest
+    mem_limit: 512m
+    restart: unless-stopped
+    depends_on:
+      papertrail-api:
+        condition: service_healthy
+    environment:
+      TOKEN: ${TOKEN}
+      API_URL: http://papertrail-api:8080
+    networks:
+      - papertrail-network
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  papertrail_postgres_data:
+
+networks:
+  papertrail-network:
