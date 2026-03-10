@@ -1,13 +1,13 @@
 #file: noinspection SpellCheckingInspection
 services:
 
-  pgAdmin:
+  database_insight:
     image: dpage/pgadmin4:latest
-    container_name: papertrail-pgadmin
+    container_name: papertrail-database-insight
     mem_limit: 512m
     restart: unless-stopped
     depends_on:
-      postgres:
+      database:
         condition: service_healthy
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
@@ -19,13 +19,13 @@ services:
     ports:
       - "127.0.0.1:5050:80"
 
-  valkey_insight:
+  cache_insight:
     image: redis/redisinsight:latest
-    container_name: papertrail-valkey-insight
+    container_name: papertrail-cache-insight
     mem_limit: 512m
     restart: unless-stopped
     depends_on:
-      valkey:
+      cache:
         condition: service_healthy
     networks:
       - papertrail-network

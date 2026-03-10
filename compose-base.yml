@@ -1,8 +1,8 @@
 #file: noinspection SpellCheckingInspection
 services:
 
-  postgres:
-    container_name: papertrail-postgres
+  database:
+    container_name: papertrail-database
     image: postgres:18.3-alpine3.23
     mem_limit: 512m
     restart: unless-stopped
@@ -12,7 +12,7 @@ services:
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       PGDATA: /var/lib/postgresql/data
     volumes:
-      - papertrail_postgres_data:/var/lib/postgresql
+      - papertrail_database_data:/var/lib/postgresql
     networks:
       - papertrail-network
     healthcheck:
@@ -26,15 +26,15 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  valkey:
-    container_name: papertrail-valkey
+  cache:
+    container_name: papertrail-cache
     image: valkey/valkey:9.0.3-alpine3.23
     mem_limit: 512m
     restart: unless-stopped
     environment:
       CACHE_PASSWORD: ${CACHE_PASSWORD}
     volumes:
-      - papertrail_valkey_data:/data
+      - papertrail_cache_data:/data
     networks:
       - papertrail-network
     command:
@@ -84,15 +84,15 @@ services:
     mem_limit: 512m
     restart: unless-stopped
     depends_on:
-      postgres:
+      database:
         condition: service_healthy
-      valkey:
+      cache:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://postgres:5432/papertrail
+      DB_URL: jdbc:postgresql://database:5432/papertrail
       DB_USERNAME: defaultdb
       DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_URL: redis://default:${CACHE_PASSWORD}@valkey:6379
+      REDIS_URL: redis://default:${CACHE_PASSWORD}@cache:6379
     networks:
       - papertrail-network
     healthcheck:
@@ -126,8 +126,8 @@ services:
         max-file: "3"
 
 volumes:
-  papertrail_postgres_data:
-  papertrail_valkey_data:
+  papertrail_database_data:
+  papertrail_cache_data:
 
 networks:
   papertrail-network:
