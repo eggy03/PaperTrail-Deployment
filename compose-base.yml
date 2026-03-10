@@ -10,7 +10,6 @@ services:
       POSTGRES_DB: papertrail
       POSTGRES_USER: defaultdb
       POSTGRES_PASSWORD: ${DB_PASSWORD}
-      PGDATA: /var/lib/postgresql/data
     volumes:
       - papertrail_database_data:/var/lib/postgresql
     networks:
