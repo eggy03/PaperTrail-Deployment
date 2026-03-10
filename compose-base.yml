@@ -8,14 +8,15 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_DB: papertrail
-      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_USER: defaultdb
       POSTGRES_PASSWORD: ${DB_PASSWORD}
+      PGDATA: /var/lib/postgresql/data
     volumes:
       - papertrail_postgres_data:/var/lib/postgresql
     networks:
       - papertrail-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U defaultdb -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,10 +31,44 @@ services:
     image: valkey/valkey:9.0.3-alpine3.23
     mem_limit: 512m
     restart: unless-stopped
+    environment:
+      CACHE_PASSWORD: ${CACHE_PASSWORD}
+    volumes:
+      - papertrail_valkey_data:/data
     networks:
       - papertrail-network
+    command:
+      - valkey-server
+      - --bind
+      - 0.0.0.0
+      - --protected-mode
+      - "yes"
+      - --port
+      - "6379"
+      - --dir
+      - /data
+      - --maxmemory
+      - 384mb
+      - --maxmemory-policy
+      - allkeys-lru
+      - --maxmemory-samples
+      - "5"
+      - --maxmemory-eviction-tenacity
+      - "10"
+      - --appendonly
+      - "yes"
+      - --appendfilename
+      - "appendonly.aof"
+      - --appenddirname
+      - "appendonlydir"
+      - --appendfsync
+      - everysec
+      - --save
+      - 20 1
+      - --requirepass
+      - ${CACHE_PASSWORD}
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      test: [ "CMD", "valkey-cli", "-a", "$$CACHE_PASSWORD", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -55,9 +90,9 @@ services:
         condition: service_healthy
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/papertrail
-      DB_USERNAME: ${DB_USERNAME}
+      DB_USERNAME: defaultdb
       DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_URL: redis://valkey:6379
+      REDIS_URL: redis://default:${CACHE_PASSWORD}@valkey:6379
     networks:
       - papertrail-network
     healthcheck:
@@ -92,6 +127,7 @@ services:
 
 volumes:
   papertrail_postgres_data:
+  papertrail_valkey_data:
 
 networks:
   papertrail-network:
