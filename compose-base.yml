@@ -25,15 +25,15 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  redis:
-    container_name: papertrail-redis
-    image: redis:8.6-alpine
+  valkey:
+    container_name: papertrail-valkey
+    image: valkey/valkey:9.0.3-alpine
     mem_limit: 512m
     restart: unless-stopped
     networks:
       - papertrail-network
     healthcheck:
-      test: [ "CMD", "redis-cli", "ping" ]
+      test: [ "CMD", "valkey-cli", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 3
@@ -51,13 +51,13 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      redis:
+      valkey:
         condition: service_healthy
     environment:
       DB_URL: jdbc:postgresql://postgres:5432/papertrail
       DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
-      REDIS_URL: redis://redis:6379
+      REDIS_URL: redis://valkey:6379
     networks:
       - papertrail-network
     healthcheck:
