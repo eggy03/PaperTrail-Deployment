@@ -4,6 +4,7 @@ services:
   pgAdmin:
     image: dpage/pgadmin4:latest
     container_name: papertrail-pgadmin
+    mem_limit: 512m
     restart: unless-stopped
     depends_on:
       postgres:
@@ -21,6 +22,7 @@ services:
   valkey_insight:
     image: redis/redisinsight:latest
     container_name: papertrail-valkey-insight
+    mem_limit: 512m
     restart: unless-stopped
     depends_on:
       valkey:
@@ -29,6 +31,18 @@ services:
       - papertrail-network
     ports:
       - "127.0.0.1:5540:5540"
+
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: papertrail-dozzle
+    mem_limit: 512m
+    restart: unless-stopped
+    volumes:
+        - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - papertrail-network
+    ports:
+        - "127.0.0.1:9090:8080"
 
 volumes:
   pgadmin_data:
