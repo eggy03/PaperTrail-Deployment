@@ -8,15 +8,14 @@ This repository provides a simple Compose setup for running PaperTrail locally o
 > It runs one instance of each service and is not intended for horizontally scaled environments.
 > This setup is suitable for local hosting or small VPS deployments serving fewer than ~2500 Discord servers.
 
-# Getting Started
+# Creating The Bot
 
 ## Step 1: Create an application in the Developer Portal
 
 Log on to the [Discord Developer Portal](https://discord.com/developers/applications) and create an application.
 
-The application can have any name, avatar, banner and description but the following scopes, permissions and intents are
-needed
-for it to work properly:
+The application can have any name, avatar, banner, or description.
+However, the following scopes, permissions, and intents are required:
 
 **Installation Contexts**
 
@@ -50,49 +49,60 @@ If you have never created a bot before, follow this [visual guide](https://jda.w
 
 You will need the following environment variables :
 
-| Variable      | Description                                               |
-|---------------|-----------------------------------------------------------|
-| `TOKEN`       | Discord application bot token (from the Developer Portal) |
-| `DB_USERNAME` | Username for the PostgreSQL database                      |
-| `DB_PASSWORD` | A strong password for the database user                   |
+| Variable         | Description                                               |
+|------------------|-----------------------------------------------------------|
+| `TOKEN`          | Discord application bot token (from the Developer Portal) |
+| `DB_PASSWORD`    | A strong password for the database user                   |
+| `CACHE_PASSWORD` | A strong password for your valkey cache                   |
 
+> [!NOTE]
+> A PostgreSQL user `defaultdb` will be created automatically using the password provided in `DB_PASSWORD`.
+> 
+> A ValKey user `default` will be created automatically using the password provided in `CACHE_PASSWORD`.
 
-## Step 3: Deploying the services
+# Installing PaperTrail
 
-### 3.1: Clone this repository
+## Step 1: Clone this repository
 
 ```shell
 git clone https://github.com/eggy03/PaperTrail-Deployment.git
 cd PaperTrail-Deployment
 ```
 
-### 3.2: Create a `.env` file having the required variables in the repository root
+## Step 2: Create a `.env` file having the required variables in the repository root
 
 Example `.env`
 
 ```dotenv
 TOKEN=my-token
-DB_USERNAME=admin
-DB_PASSWORD=admin@123
+DB_PASSWORD=a-strong-password
+CACHE_PASSWORD=a-strong-password
 ```
 
 > [!CAUTION]
 > Never commit your .env file to version control.
 
-### 3.3: Start the services
+## Step 3: Deploy the services
 
 ```shell
-#without metrics
+# base deployment
 docker compose -f compose-base.yml up -d
-```
-OR
 
-```shell
-#with metrics
+# deployment with insights
 docker compose -f compose-base.yml -f compose-insight.yml up -d
 ```
 
 ## Step 4: Test your deployment
+
+To check if everything is running properly
+
+```bash
+# base deployment
+docker compose -f compose-base.yml ps
+
+# deployment with insights
+docker compose -f compose-base.yml -f compose-insight.yml ps
+```
 
 If the deployment was successful:
 
@@ -102,6 +112,32 @@ If the deployment was successful:
 
 This command will guide you through the initial configuration for your server.
 
+# Updating PaperTrail
+
+```bash
+# update images
+docker compose -f compose-base.yml -f compose-insight.yml pull
+
+# restart containers
+docker compose -f compose-base.yml -f compose-insight.yml up -d
+
+# remove dangling images
+docker image prune
+
+# check the updated images
+docker compose -f compose-base.yml -f compose-insight.yml images
+```
+
+# Uninstalling PaperTrail
+
+```bash
+# Remove containers, networks and volumes
+docker compose -f compose-base.yml -f compose-insight.yml down -v
+
+# Remove pulled images
+docker compose -f compose-base.yml -f compose-insight.yml down --rmi all -v
+```
+
 # Compose Variants
 
 ## 1: Compose Base
@@ -110,12 +146,12 @@ This command will guide you through the initial configuration for your server.
 
 Services included:
 
-| Service                 | Description           | Internal Endpoint                       |
-|-------------------------|-----------------------|-----------------------------------------|
-| PostgreSQL v18          | Core database service | `postgresql://postgres:5432/papertrail` |
-| Valkey v9               | Core cache service    | `redis://valkey:6379`                   |
-| PaperTrail API (latest) | Core API service      | `http://papertrail-api:8080`            |
-| PaperTrail Bot (latest) | Core Bot service      | N/A                                     |
+| Service                 | Description           | Internal Endpoint                                               |
+|-------------------------|-----------------------|-----------------------------------------------------------------|
+| PostgreSQL v18          | Core database service | `postgresql://defaultdb:<DB_PASSWORD>@database:5432/papertrail` |
+| Valkey v9               | Core cache service    | `redis://default:<CACHE_PASSWORD>@cache:6379`                   |
+| PaperTrail API (latest) | Core API service      | `http://papertrail-api:8080`                                    |
+| PaperTrail Bot (latest) | Core Bot service      | N/A                                                             |
 
 These services communicate over the **internal Docker network** and are **not exposed to the host machine via ports**.
 
@@ -126,27 +162,16 @@ that provide **observability and debugging tools** for containers running in the
 
 Services included:
 
-| Service       | Description                                | URL                   |
-|---------------|--------------------------------------------|-----------------------|
-| PgAdmin       | Web UI for viewing and managing PostgreSQL | http://127.0.0.1:5050 |
-| Redis Insight | UI for inspecting Valkey/Redis data        | http://127.0.0.1:5540 |
-| Dozzle        | UI for viewing container logs and activity | http://127.0.0.1:9090 |
+| Service       | Description                                    | URL                   |
+|---------------|------------------------------------------------|-----------------------|
+| PgAdmin       | Web UI for viewing and managing PostgreSQL     | http://127.0.0.1:5050 |
+| Redis Insight | Web UI for inspecting Valkey/Redis data        | http://127.0.0.1:5540 |
+| Dozzle        | Web UI for viewing container logs and activity | http://127.0.0.1:9090 |
 
 These services **publish ports to the host machine**, making them accessible through the URLs above.
 
 > [!NOTE]
 > `compose-insight.yml` requires `compose-base.yml` and cannot be run independently.
-
-# Configuring Memory Limits
-
-By default, each service has a memory limit of 512 MB.
-
-You can override this limit by modifying the `mem_limit` parameter in the Docker Compose files.
-
-Example:
-```yaml
-mem_limit: 1g
-```
 
 # License
 
