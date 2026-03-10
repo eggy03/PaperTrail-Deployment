@@ -3,7 +3,7 @@ services:
 
   postgres:
     container_name: papertrail-postgres
-    image: postgres:18.0-alpine
+    image: postgres:18.3-alpine3.23
     mem_limit: 512m
     restart: unless-stopped
     environment:
@@ -11,7 +11,7 @@ services:
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
-      - papertrail_postgres_data:/var/lib/postgresql/data
+      - papertrail_postgres_data:/var/lib/postgresql
     networks:
       - papertrail-network
     healthcheck:
@@ -27,7 +27,7 @@ services:
 
   valkey:
     container_name: papertrail-valkey
-    image: valkey/valkey:9.0.3-alpine
+    image: valkey/valkey:9.0.3-alpine3.23
     mem_limit: 512m
     restart: unless-stopped
     networks:
