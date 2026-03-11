@@ -52,13 +52,10 @@ You will need the following environment variables :
 | Variable         | Description                                               |
 |------------------|-----------------------------------------------------------|
 | `TOKEN`          | Discord application bot token (from the Developer Portal) |
+| `DB_NAME`        | A name for your database                                  |
+| `DB_USERNAME`    | A username for your database                              |
 | `DB_PASSWORD`    | A strong password for the database user                   |
 | `CACHE_PASSWORD` | A strong password for your valkey cache                   |
-
-> [!NOTE]
-> A PostgreSQL user `defaultdb` will be created automatically using the password provided in `DB_PASSWORD`.
-> 
-> A ValKey user `default` will be created automatically using the password provided in `CACHE_PASSWORD`.
 
 # Installing PaperTrail
 
@@ -69,18 +66,16 @@ git clone https://github.com/eggy03/PaperTrail-Deployment.git
 cd PaperTrail-Deployment
 ```
 
-## Step 2: Create a `.env` file having the required variables in the repository root
+## Step 2: Create your environment file in the repository root
 
-Example `.env`
-
-```dotenv
-TOKEN=my-token
-DB_PASSWORD=a-strong-password
-CACHE_PASSWORD=a-strong-password
+```shell
+cp .env.example .env
 ```
+Use your preferred editor to set required values in your `.env` file
 
 > [!CAUTION]
 > Never commit your .env file to version control.
+> If your `TOKEN` is ever exposed, immediately regenerate it in the Discord Developer Portal.
 
 ## Step 3: Deploy the services
 
@@ -92,7 +87,7 @@ docker compose -f compose-base.yml up -d
 docker compose -f compose-base.yml -f compose-insight.yml up -d
 ```
 
-## Step 4: Test your deployment
+## Step 4: Verify your deployment
 
 To check if everything is running properly
 
@@ -102,6 +97,9 @@ docker compose -f compose-base.yml ps
 
 # deployment with insights
 docker compose -f compose-base.yml -f compose-insight.yml ps
+
+# check logs
+docker compose -f compose-base.yml -f compose-insight.yml logs -f
 ```
 
 If the deployment was successful:
@@ -112,9 +110,25 @@ If the deployment was successful:
 
 This command will guide you through the initial configuration for your server.
 
+# Stopping and Starting PaperTrail
+
+To stop all the services
+
+```bash
+docker compose -f compose-base.yml -f compose-insight.yml down
+```
+
+To start them again
+```bash
+docker compose -f compose-base.yml -f compose-insight.yml up -d
+```
+
 # Updating PaperTrail
 
 ```bash
+# stop containers
+docker compose -f compose-base.yml -f compose-insight.yml down
+
 # update images
 docker compose -f compose-base.yml -f compose-insight.yml pull
 
@@ -131,10 +145,10 @@ docker compose -f compose-base.yml -f compose-insight.yml images
 # Uninstalling PaperTrail
 
 ```bash
-# Remove containers, networks and volumes
+# Remove containers, networks and volumes, keeping the images intact
 docker compose -f compose-base.yml -f compose-insight.yml down -v
 
-# Remove pulled images
+# Removing everything
 docker compose -f compose-base.yml -f compose-insight.yml down --rmi all -v
 ```
 
@@ -146,12 +160,12 @@ docker compose -f compose-base.yml -f compose-insight.yml down --rmi all -v
 
 Services included:
 
-| Service                 | Description           | Internal Endpoint                                               |
-|-------------------------|-----------------------|-----------------------------------------------------------------|
-| PostgreSQL v18          | Core database service | `postgresql://defaultdb:<DB_PASSWORD>@database:5432/papertrail` |
-| Valkey v9               | Core cache service    | `redis://default:<CACHE_PASSWORD>@cache:6379`                   |
-| PaperTrail API (latest) | Core API service      | `http://papertrail-api:8080`                                    |
-| PaperTrail Bot (latest) | Core Bot service      | N/A                                                             |
+| Service                 | Description           | Internal Endpoint                                                  |
+|-------------------------|-----------------------|--------------------------------------------------------------------|
+| PostgreSQL v18          | Core database service | `postgresql://<DB_USERNAME>:<DB_PASSWORD>@database:5432/<DB_NAME>` |
+| Valkey v9               | Core cache service    | `redis://default:<CACHE_PASSWORD>@cache:6379`                      |
+| PaperTrail API (latest) | Core API service      | `http://papertrail-api:8080`                                       |
+| PaperTrail Bot (latest) | Core Bot service      | N/A                                                                |
 
 These services communicate over the **internal Docker network** and are **not exposed to the host machine via ports**.
 
@@ -159,6 +173,8 @@ These services communicate over the **internal Docker network** and are **not ex
 
 `compose-insight.yml` extends `compose-base.yml` with optional services
 that provide **observability and debugging tools** for containers running in the PaperTrail network.
+
+`compose-insight.yml` requires `compose-base.yml` and cannot be run independently.
 
 Services included:
 
@@ -170,8 +186,33 @@ Services included:
 
 These services **publish ports to the host machine**, making them accessible through the URLs above.
 
-> [!NOTE]
-> `compose-insight.yml` requires `compose-base.yml` and cannot be run independently.
+### Accessing PgAdmin
+
+You will need an email and a password to log in to PgAdmin.
+If you are logging in for the first time, the default e-mail and password is:
+
+Email: `admin@example.com`
+
+Password: `admin`
+
+It is highly recommended that you change your Email/Username and password upon login, via the admin panel.
+The default Email and Password can be updated in `compose-insight.yml`.
+
+- In the `Dashboard` tab, click on `Add New Server`.
+- In the `General` tab, provide a server name and then go to the `Connections` tab.
+- For `Host name/address`, write "database"
+- For `Port`, write "5432"
+- For `Maintainence DB`, substitute the value you used for `DB_NAME`
+- For `Username`, substitute the value you used for `DB_USERNAME`
+- For `Password`, substitute the value you used for `DB_PASSWORD`
+
+### Accessing Redis Insight
+
+If you are logging in for the first time, you will have the option to `Add Redis Database`
+
+Use the following Connection URL `redis://default:<CACHE_PASSWORD>@cache:6379`
+
+Substitute <CACHE_PASSWORD> with the password set by you in the environment variables.
 
 # License
 
