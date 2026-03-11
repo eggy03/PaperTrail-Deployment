@@ -79,7 +79,7 @@ services:
 
   papertrail-api:
     container_name: papertrail-api
-    image: ghcr.io/eggy03/papertrail-api:latest-native
+    image: ghcr.io/eggy03/papertrail-api:latest
     mem_limit: 512m
     restart: unless-stopped
     depends_on:
