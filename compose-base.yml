@@ -7,15 +7,15 @@ services:
     mem_limit: 512m
     restart: unless-stopped
     environment:
-      POSTGRES_DB: papertrail
-      POSTGRES_USER: defaultdb
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - papertrail_database_data:/var/lib/postgresql
     networks:
       - papertrail-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U defaultdb -d $$POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -31,7 +31,7 @@ services:
     mem_limit: 512m
     restart: unless-stopped
     environment:
-      CACHE_PASSWORD: ${CACHE_PASSWORD}
+      VALKEY_PASSWORD: ${CACHE_PASSWORD}
     volumes:
       - papertrail_cache_data:/data
     networks:
@@ -88,10 +88,11 @@ services:
       cache:
         condition: service_healthy
     environment:
-      DB_URL: jdbc:postgresql://database:5432/papertrail
-      DB_USERNAME: defaultdb
+      DB_URL: jdbc:postgresql://database:5432/${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_URL: redis://default:${CACHE_PASSWORD}@cache:6379
+      PORT: 8080 # you can remove this entirely since it will default to 8080 if not provided
     networks:
       - papertrail-network
     healthcheck:
