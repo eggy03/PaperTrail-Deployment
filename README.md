@@ -8,6 +8,11 @@ This repository provides a simple Compose setup for running PaperTrail locally o
 > It runs one instance of each service and is not intended for horizontally scaled environments.
 > This setup is suitable for local hosting or small VPS deployments serving fewer than ~2500 Discord servers.
 
+# Latest Releases
+
+[![Latest API Release](https://img.shields.io/github/v/release/eggy03/PaperTrail-API-Quarkus?sort=date&display_name=tag&style=for-the-badge&label=PaperTrail%20API)](https://github.com/eggy03/PaperTrail-API-Quarkus/pkgs/container/papertrail-api)
+[![Latest Bot Release](https://img.shields.io/github/v/release/eggy03/PaperTrailBot?sort=date&display_name=tag&style=for-the-badge&label=PaperTrail%20Bot)](https://github.com/eggy03/PaperTrailBot/pkgs/container/papertrail-bot)
+
 # Creating The Bot
 
 ## Step 1: Create an application in the Developer Portal
