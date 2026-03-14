@@ -1,4 +1,14 @@
-# PaperTrail-Deployment
+# Table of Contents
+
+- [Overview](#overview)
+- [Latest Releases](#latest-releases)
+- [Creating the Bot](#creating-the-bot)
+- [Installing PaperTrail](#installing-papertrail)
+- [Updating PaperTrail](#updating-papertrail)
+- [Uninstalling PaperTrail](#uninstalling-papertrail)
+- [Compose Variants](#compose-variants)
+
+# Overview
 Docker-based deployment configuration for the PaperTrail Discord bot and its supporting services.
 
 This repository provides a simple Compose setup for running PaperTrail locally or on a VPS with minimal configuration.
@@ -76,7 +86,9 @@ cd PaperTrail-Deployment
 ```shell
 cp .env.example .env
 ```
-Use your preferred editor to set required values in your `.env` file
+Use your preferred editor to edit the required values in your `.env` file.
+If you have replicated the provided `.env.example` using the above command,
+you can keep the default values for all the variables except `TOKEN` since it has no value set.
 
 > [!CAUTION]
 > Never commit your .env file to version control.
@@ -85,11 +97,7 @@ Use your preferred editor to set required values in your `.env` file
 ## Step 3: Deploy the services
 
 ```shell
-# base deployment
-docker compose -f compose-base.yml up -d
-
-# deployment with insights
-docker compose -f compose-base.yml -f compose-insight.yml up -d
+docker compose up -d
 ```
 
 ## Step 4: Verify your deployment
@@ -98,13 +106,10 @@ To check if everything is running properly
 
 ```bash
 # base deployment
-docker compose -f compose-base.yml ps
-
-# deployment with insights
-docker compose -f compose-base.yml -f compose-insight.yml ps
+docker compose ps
 
 # check logs
-docker compose -f compose-base.yml -f compose-insight.yml logs -f
+docker compose logs -f
 ```
 
 If the deployment was successful:
@@ -115,71 +120,67 @@ If the deployment was successful:
 
 This command will guide you through the initial configuration for your server.
 
-# Stopping and Starting PaperTrail
-
-To stop all the services
+# Stopping, Starting and Restarting PaperTrail
 
 ```bash
-docker compose -f compose-base.yml -f compose-insight.yml down
+docker compose stop
 ```
-
-To start them again
 ```bash
-docker compose -f compose-base.yml -f compose-insight.yml up -d
+docker compose start
+```
+```bash
+docker compose restart
 ```
 
 # Updating PaperTrail
 
 ```bash
 # stop containers
-docker compose -f compose-base.yml -f compose-insight.yml down
+docker compose down
 
 # update images
-docker compose -f compose-base.yml -f compose-insight.yml pull
+docker compose pull
 
 # restart containers
-docker compose -f compose-base.yml -f compose-insight.yml up -d
-
-# remove dangling images
-docker image prune
-
-# check the updated images
-docker compose -f compose-base.yml -f compose-insight.yml images
+docker compose up -d
 ```
-
 # Uninstalling PaperTrail
 
 ```bash
-# Remove containers, networks and volumes, keeping the images intact
-docker compose -f compose-base.yml -f compose-insight.yml down -v
+# Remove containers, networks and volumes, except images
+docker compose down -v
 
 # Removing everything
-docker compose -f compose-base.yml -f compose-insight.yml down --rmi all -v
+docker compose down --rmi all -v
 ```
 
 # Compose Variants
 
 ## 1: Compose Base
 
-`compose-base.yml` contains the core services required to run PaperTrail.
+`compose.yml` contains the core services required to run PaperTrail.
 
 Services included:
 
-| Service                 | Description           | Internal Endpoint                                                  |
-|-------------------------|-----------------------|--------------------------------------------------------------------|
-| PostgreSQL v18          | Core database service | `postgresql://<DB_USERNAME>:<DB_PASSWORD>@database:5432/<DB_NAME>` |
-| Valkey v9               | Core cache service    | `redis://default:<CACHE_PASSWORD>@cache:6379`                      |
-| PaperTrail API (latest) | Core API service      | `http://papertrail-api:8080`                                       |
-| PaperTrail Bot (latest) | Core Bot service      | N/A                                                                |
+| Service                 | Description                                    |
+|-------------------------|------------------------------------------------|
+| PostgreSQL v18          | Core database service                          |
+| Valkey v9               | Core cache service                             |
+| PaperTrail API (latest) | Core API service                               |
+| PaperTrail Bot (latest) | Core Bot service                               |
+| Dozzle                  | Web UI for viewing container logs and activity |
 
-These services communicate over the **internal Docker network** and are **not exposed to the host machine via ports**.
+All the above services, except `Dozzle` communicate over the **internal Docker network**
+and are **NOT exposed to the host machine via ports**.
+
+You can access Dozzle at `http://127.0.0.1:9090`
 
 ## 2: Compose Insight
 
-`compose-insight.yml` extends `compose-base.yml` with optional services
+`compose-insight.yml` extends `compose.yml` with optional services
 that provide **observability and debugging tools** for containers running in the PaperTrail network.
 
-`compose-insight.yml` requires `compose-base.yml` and cannot be run independently.
+`compose-insight.yml` requires `compose.yml` and cannot be run independently.
 
 Services included:
 
@@ -187,7 +188,6 @@ Services included:
 |---------------|------------------------------------------------|-----------------------|
 | PgAdmin       | Web UI for viewing and managing PostgreSQL     | http://127.0.0.1:5050 |
 | Redis Insight | Web UI for inspecting Valkey/Redis data        | http://127.0.0.1:5540 |
-| Dozzle        | Web UI for viewing container logs and activity | http://127.0.0.1:9090 |
 
 These services **publish ports to the host machine**, making them accessible through the URLs above.
 
