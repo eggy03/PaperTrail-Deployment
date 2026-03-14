@@ -1,41 +1,49 @@
 #file: noinspection SpellCheckingInspection
+
+x-defaults: &defaults
+  mem_limit: 512m
+  restart: unless-stopped
+  networks:
+    - papertrail-network
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+volumes:
+  papertrail_database_data:
+  papertrail_cache_data:
+
+networks:
+    papertrail-network:
+
 services:
 
   database:
+    <<: *defaults
     container_name: papertrail-database
     image: postgres:18.3-alpine3.23
-    mem_limit: 512m
-    restart: unless-stopped
     environment:
       POSTGRES_DB: ${DB_NAME}
       POSTGRES_USER: ${DB_USERNAME}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
     volumes:
       - papertrail_database_data:/var/lib/postgresql
-    networks:
-      - papertrail-network
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      test: [ "CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB" ]
       interval: 10s
       timeout: 5s
       retries: 5
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   cache:
+    <<: *defaults
     container_name: papertrail-cache
     image: valkey/valkey:9.0.3-alpine3.23
-    mem_limit: 512m
-    restart: unless-stopped
     environment:
       VALKEY_PASSWORD: ${CACHE_PASSWORD}
     volumes:
       - papertrail_cache_data:/data
-    networks:
-      - papertrail-network
     command:
       - valkey-server
       - --bind
@@ -71,17 +79,11 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   papertrail-api:
+    <<: *defaults
     container_name: papertrail-api
     image: ghcr.io/eggy03/papertrail-api:latest
-    mem_limit: 512m
-    restart: unless-stopped
     depends_on:
       database:
         condition: service_healthy
@@ -93,41 +95,28 @@ services:
       DB_PASSWORD: ${DB_PASSWORD}
       REDIS_URL: redis://default:${CACHE_PASSWORD}@cache:6379
       PORT: 8080 # you can remove this entirely since it will default to 8080 if not provided
-    networks:
-      - papertrail-network
     healthcheck:
       test: [ "CMD", "curl", "-f", "http://localhost:8080/q/health" ]
       interval: 10s
       timeout: 5s
       retries: 3
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
 
   papertrail-bot:
+    <<: *defaults
     container_name: papertrail-bot
     image: ghcr.io/eggy03/papertrail-bot:latest
-    mem_limit: 512m
-    restart: unless-stopped
     depends_on:
       papertrail-api:
         condition: service_healthy
     environment:
       TOKEN: ${TOKEN}
       API_URL: http://papertrail-api:8080
-    networks:
-      - papertrail-network
-    logging:
-      driver: json-file
-      options:
-        max-size: "10m"
-        max-file: "3"
 
-volumes:
-  papertrail_database_data:
-  papertrail_cache_data:
-
-networks:
-  papertrail-network:
+  dozzle:
+    <<: *defaults
+    image: amir20/dozzle:latest
+    container_name: papertrail-dozzle
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "127.0.0.1:9090:8080"

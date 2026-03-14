@@ -1,11 +1,25 @@
 #file: noinspection SpellCheckingInspection
+
+x-defaults: &defaults
+  mem_limit: 512m
+  restart: unless-stopped
+  networks:
+    - papertrail-network
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
+volumes:
+  pgadmin_data:
+
 services:
 
   database_insight:
+    <<: *defaults
     image: dpage/pgadmin4:latest
     container_name: papertrail-database-insight
-    mem_limit: 512m
-    restart: unless-stopped
     depends_on:
       database:
         condition: service_healthy
@@ -14,35 +28,15 @@ services:
       PGADMIN_DEFAULT_PASSWORD: admin
     volumes:
       - pgadmin_data:/var/lib/pgadmin
-    networks:
-      - papertrail-network
     ports:
       - "127.0.0.1:5050:80"
 
   cache_insight:
+    <<: *defaults
     image: redis/redisinsight:latest
     container_name: papertrail-cache-insight
-    mem_limit: 512m
-    restart: unless-stopped
     depends_on:
       cache:
         condition: service_healthy
-    networks:
-      - papertrail-network
     ports:
       - "127.0.0.1:5540:5540"
-
-  dozzle:
-    image: amir20/dozzle:latest
-    container_name: papertrail-dozzle
-    mem_limit: 512m
-    restart: unless-stopped
-    volumes:
-        - /var/run/docker.sock:/var/run/docker.sock
-    networks:
-      - papertrail-network
-    ports:
-        - "127.0.0.1:9090:8080"
-
-volumes:
-  pgadmin_data:
