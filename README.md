@@ -162,18 +162,15 @@ docker compose down --rmi all -v
 
 Services included:
 
-| Service                 | Description                                    |
-|-------------------------|------------------------------------------------|
-| PostgreSQL v18          | Core database service                          |
-| Valkey v9               | Core cache service                             |
-| PaperTrail API (latest) | Core API service                               |
-| PaperTrail Bot (latest) | Core Bot service                               |
-| Dozzle                  | Web UI for viewing container logs and activity |
+| Service                 | Description           |
+|-------------------------|-----------------------|
+| PostgreSQL v18          | Core database service |
+| Valkey v9               | Core cache service    |
+| PaperTrail API (latest) | Core API service      |
+| PaperTrail Bot (latest) | Core Bot service      |
 
-All the above services, except `Dozzle` communicate over the **internal Docker network**
+All the above services communicate over the **internal Docker network**
 and are **NOT exposed to the host machine via ports**.
-
-You can access Dozzle at `http://127.0.0.1:9090`
 
 ## 2: Compose Insight
 
@@ -188,6 +185,7 @@ Services included:
 |---------------|------------------------------------------------|-----------------------|
 | PgAdmin       | Web UI for viewing and managing PostgreSQL     | http://127.0.0.1:5050 |
 | Redis Insight | Web UI for inspecting Valkey/Redis data        | http://127.0.0.1:5540 |
+| Dozzle        | Web UI for viewing container logs and activity | http://127.0.0.1:9090 |
 
 These services **publish ports to the host machine**, making them accessible through the URLs above.
 

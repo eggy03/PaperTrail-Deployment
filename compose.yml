@@ -111,12 +111,3 @@ services:
     environment:
       TOKEN: ${TOKEN}
       API_URL: http://papertrail-api:8080
-
-  dozzle:
-    <<: *defaults
-    image: amir20/dozzle:latest
-    container_name: papertrail-dozzle
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "127.0.0.1:9090:8080"
