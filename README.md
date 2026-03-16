@@ -185,7 +185,6 @@ Services included:
 |---------------|------------------------------------------------|-----------------------|
 | PgAdmin       | Web UI for viewing and managing PostgreSQL     | http://127.0.0.1:5050 |
 | Redis Insight | Web UI for inspecting Valkey/Redis data        | http://127.0.0.1:5540 |
-| Dozzle        | Web UI for viewing container logs and activity | http://127.0.0.1:9090 |
 
 These services **publish ports to the host machine**, making them accessible through the URLs above.
 
