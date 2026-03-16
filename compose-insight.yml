@@ -1,6 +1,13 @@
 #file: noinspection SpellCheckingInspection
 
 x-defaults: &defaults
+  cap_drop:
+    - SYS_ADMIN
+    - NET_RAW
+    - SYS_PTRACE
+    - MKNOD
+    - AUDIT_WRITE
+    - SYS_MODULE
   mem_limit: 512m
   restart: unless-stopped
   networks:
@@ -40,12 +47,3 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:5540:5540"
-
-  dozzle:
-    <<: *defaults
-    image: amir20/dozzle:latest
-    container_name: papertrail-dozzle
-    volumes:
-      - /var/run/docker.sock:/var/run/docker.sock
-    ports:
-      - "127.0.0.1:9090:8080"
