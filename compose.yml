@@ -1,6 +1,13 @@
 #file: noinspection SpellCheckingInspection
 
 x-defaults: &defaults
+  cap_drop:
+    - SYS_ADMIN
+    - NET_RAW
+    - SYS_PTRACE
+    - MKNOD
+    - AUDIT_WRITE
+    - SYS_MODULE
   mem_limit: 512m
   restart: unless-stopped
   networks:
@@ -10,6 +17,11 @@ x-defaults: &defaults
     options:
       max-size: "10m"
       max-file: "3"
+
+x-readonly: &readonly
+  read_only: true
+  tmpfs:
+    - /tmp
 
 volumes:
   papertrail_database_data:
@@ -46,8 +58,6 @@ services:
       - papertrail_cache_data:/data
     command:
       - valkey-server
-      - --bind
-      - 0.0.0.0
       - --protected-mode
       - "yes"
       - --port
@@ -81,7 +91,7 @@ services:
       retries: 3
 
   papertrail-api:
-    <<: *defaults
+    <<: [*defaults, *readonly]
     container_name: papertrail-api
     image: ghcr.io/eggy03/papertrail-api:latest
     depends_on:
@@ -102,7 +112,7 @@ services:
       retries: 3
 
   papertrail-bot:
-    <<: *defaults
+    <<: [*defaults, *readonly]
     container_name: papertrail-bot
     image: ghcr.io/eggy03/papertrail-bot:latest
     depends_on:
