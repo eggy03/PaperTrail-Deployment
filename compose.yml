@@ -2,12 +2,9 @@
 
 x-defaults: &defaults
   cap_drop:
-    - SYS_ADMIN
-    - NET_RAW
-    - SYS_PTRACE
-    - MKNOD
-    - AUDIT_WRITE
-    - SYS_MODULE
+    - ALL
+  security_opt:
+    - no-new-privileges:true
   mem_limit: 512m
   restart: unless-stopped
   networks:
@@ -28,12 +25,18 @@ volumes:
   papertrail_cache_data:
 
 networks:
-    papertrail-network:
+  papertrail-network:
 
 services:
 
   database:
     <<: *defaults
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
     container_name: papertrail-database
     image: postgres:18.3-alpine3.23
     environment:
@@ -50,6 +53,12 @@ services:
 
   cache:
     <<: *defaults
+    cap_add:
+      - CHOWN
+      - FOWNER
+      - DAC_OVERRIDE
+      - SETUID
+      - SETGID
     container_name: papertrail-cache
     image: valkey/valkey:9.0.3-alpine3.23
     environment:
@@ -90,8 +99,8 @@ services:
       timeout: 5s
       retries: 3
 
-  papertrail-api:
-    <<: [*defaults, *readonly]
+  api:
+    <<: [ *defaults, *readonly ]
     container_name: papertrail-api
     image: ghcr.io/eggy03/papertrail-api:latest
     depends_on:
@@ -111,12 +120,12 @@ services:
       timeout: 5s
       retries: 3
 
-  papertrail-bot:
-    <<: [*defaults, *readonly]
+  bot:
+    <<: [ *defaults, *readonly ]
     container_name: papertrail-bot
     image: ghcr.io/eggy03/papertrail-bot:latest
     depends_on:
-      papertrail-api:
+      api:
         condition: service_healthy
     environment:
       TOKEN: ${TOKEN}
